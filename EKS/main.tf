@@ -4,15 +4,15 @@ module "vpc" {
   name = "eks-vpc"
   cidr = var.vpc_cidr
 
-  azs  = data.aws_availability_zones.azs.names
+  azs             = data.aws_availability_zones.azs.names
   private_subnets = var.private_subnets
-  public_subnets = var.public_subnets
+  public_subnets  = var.public_subnets
 
   enable_dns_hostnames = true
-  enable_nat_gateway = true
-  single_nat_gateway = true
+  enable_nat_gateway   = true
+  single_nat_gateway   = true
 
- tags = {
+  tags = {
     "kubernetes.io/cluster/my-eks-cluster" = "shared"
   }
 
@@ -32,12 +32,12 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
 
-  cluster_name    = "my-eks-cluster"
-  cluster_version = "1.30"  
+  cluster_name                   = "my-eks-cluster"
+  cluster_version                = "1.30"
   cluster_endpoint_public_access = true
 
-  vpc_id                   = module.vpc.vpc_id
-  subnet_ids               = module.vpc.private_subnets
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
 
   eks_managed_node_groups = {
     nodes = {
