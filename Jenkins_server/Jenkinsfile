@@ -1,69 +1,94 @@
 pipeline {
-    agent any
+    agent any  // Defines that the pipeline can run on any available agent
+
     environment {
-        AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
+        // Sets environment variables for AWS credentials and region
+        AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
-        AWS_DEFAULT_REGION = "us-east-1"
+        AWS_DEFAULT_REGION   = "us-east-1"
     }
+
     stages {
-        stage('Checkout SCM'){
-            steps{
-                script{
+        // Stage to checkout code from the SCM repository
+        stage('Checkout SCM') {
+            steps {
+                script {
+                    // Checks out the code from the specified branch of the Git repository
                     checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/Sarthak221198/terraform_project_5.git']])
                 }
             }
         }
-        stage('Initializing Terraform'){
-            steps{
-                script{
-                    dir('EKS'){
+
+        // Stage to initialize Terraform
+        stage('Initializing Terraform') {
+            steps {
+                script {
+                    dir('EKS') {
+                        // Runs 'terraform init' to initialize the Terraform working directory
                         sh 'terraform init'
                     }
                 }
             }
         }
-        stage('Formatting Terraform Code'){
-            steps{
-                script{
-                    dir('EKS'){
+
+        // Stage to format Terraform code
+        stage('Formatting Terraform Code') {
+            steps {
+                script {
+                    dir('EKS') {
+                        // Runs 'terraform fmt' to format the Terraform configuration files
                         sh 'terraform fmt'
                     }
                 }
             }
         }
-        stage('Validating Terraform'){
-            steps{
-                script{
-                    dir('EKS'){
+
+        // Stage to validate Terraform configuration
+        stage('Validating Terraform') {
+            steps {
+                script {
+                    dir('EKS') {
+                        // Runs 'terraform validate' to validate the Terraform configuration files
                         sh 'terraform validate'
                     }
                 }
             }
         }
-        stage('Previewing the Infra using Terraform'){
-            steps{
-                script{
-                    dir('EKS'){
+
+        // Stage to preview infrastructure changes
+        stage('Previewing the Infra using Terraform') {
+            steps {
+                script {
+                    dir('EKS') {
+                        // Runs 'terraform plan' to preview the changes Terraform will make
                         sh 'terraform plan'
+                        // Waits for user confirmation before proceeding
+                        input(message: "Are you sure to proceed?", ok: "Proceed")
                     }
-                    input(message: "Are you sure to proceed?", ok: "Proceed")
                 }
             }
         }
-        stage('Creating/Destroying an EKS Cluster'){
-            steps{
-                script{
+
+        // Stage to apply or destroy infrastructure changes
+        stage('Creating/Destroying an EKS Cluster') {
+            steps {
+                script {
                     dir('EKS') {
+                        // Executes Terraform command to create or destroy infrastructure based on the 'action' variable
                         sh 'terraform $action --auto-approve'
                     }
                 }
             }
         }
+
+        // Stage to deploy the Nginx application to the EKS cluster
         stage('Deploying Nginx Application') {
-            steps{
-                script{
+            steps {
+                script {
                     dir('EKS/ConfigurationFiles') {
+                        // Updates kubeconfig to point to the EKS cluster
                         sh 'aws eks update-kubeconfig --name my-eks-cluster'
+                        // Applies the Kubernetes deployment and service configuration files
                         sh 'kubectl apply -f deployment.yaml'
                         sh 'kubectl apply -f service.yaml'
                     }
